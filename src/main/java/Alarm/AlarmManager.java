@@ -1,5 +1,8 @@
 package Alarm;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+
 import AllVitalSigns.VitalSign;
 
 import javax.swing.*;
@@ -9,42 +12,67 @@ import java.util.Map;
 
 public class AlarmManager {
 
-    // record every signal from last signal
     private final Map<String, AlarmLevel> lastLevel = new HashMap<>();
-
-    // one notify every signal
     private final Map<String, JDialog> vitalDialogs = new HashMap<>();
     private final Map<String, JOptionPane> vitalOptionPanes = new HashMap<>();
+
+    private String recipientEmail = "your@email.com";
+
+    private final Duration emailCooldown = Duration.ofSeconds(10);
+    private final Map<String, LocalDateTime> lastEmailSent = new HashMap<>();
+
+    private AlarmEmailService emailService = null;
+
+
+    public void configureEmail(String smtpHost, int smtpPort, String senderEmail, String appPassword, boolean useTls) {
+        this.emailService = new AlarmEmailService(smtpHost, smtpPort, senderEmail, appPassword, useTls);
+    }
+
+    public void setRecipientEmail(String email) {
+        if (email == null) return;
+        email = email.trim();
+        if (!email.isEmpty()) this.recipientEmail = email;
+    }
 
     public void applyUIAndNotify(VitalSign v, JComponent panel) {
         AlarmLevel level = v.getAlarmLevel();
         String key = v.getClass().getSimpleName();
 
-        // 1)
         setPanelColour(panel, level);
 
-        // 2) GREEN
         if (level == AlarmLevel.GREEN) {
             lastLevel.put(key, level);
             closeVitalDialog(key);
             return;
         }
 
-        // 3) level changes but not updated
         AlarmLevel previous = lastLevel.get(key);
         if (previous != null && previous == level) {
             return;
         }
         lastLevel.put(key, level);
 
-        // 4)alarm info
         Alarm alarm = new Alarm(v);
         alarm.sendNotification();
 
-        // 5) one vital one notify
+        if (level == AlarmLevel.RED && emailService != null) {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime last = lastEmailSent.get(key);
+
+            boolean inCooldown = (last != null) && Duration.between(last, now).compareTo(emailCooldown) < 0;
+
+            if (!inCooldown) {
+                String subject = "RED ALARM: " + key + " (" + level + ")";
+                String body = alarm.getMessage();
+
+                new Thread(() -> emailService.sendEmail(recipientEmail, subject, body), "AlarmEmail-" + key).start();
+                lastEmailSent.put(key, now);
+            }
+        }
+
         SwingUtilities.invokeLater(() -> {
             if (level == AlarmLevel.RED) {
-                Toolkit.getDefaultToolkit().beep(); // 只对 RED 响，避免 AMBER 烦
+                Toolkit.getDefaultToolkit().beep();
             }
             showOrUpdateVitalDialog(
                     key,
