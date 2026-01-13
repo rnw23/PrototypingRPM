@@ -55,35 +55,37 @@ public class Patient extends VitalSignsGenerator {
 
     public ECG getECG(){ return ECGHistory.get(ECGHistory.size() - 1); }
 
+
+    public ArrayList<ECG> getECGHistory() {
+        return ECGHistory;
+    }
+
+    public ArrayList<BloodPressure> getBloodPressureHistory() {
+        return BloodPressureHistory;
+    }
+
+    public ArrayList<HeartRate> getHeartRateHistory() {
+        return HeartRateHistory;
+    }
+
+    public ArrayList<RespRate> getRespRateHistory() {
+        return RespRateHistory;
+    }
+
+    public ArrayList<Temperature> getTemperatureHistory() {
+        return TemperatureHistory;
+    }
+
     /* ----- Potential Display in the UI ----- */
     public String PatientDisplay() {
         return "Patient\n"
                 + "ID: " + getId() + "\n"
                 + "Name: " + getName() + "\n"
-                + "Age: " + getAge() + "\n"
-                + "Heart Rate: " + getHr() + " bpm\n"
-                + "Blood Pressure: " + getBp() + "\n"
-                + "Resp Rate: " + getRR() + "\n"
-                + "Temperature: " + getTemp() + "\n"
-                + "ECG: " + getECG();
+                + "Age: " + getAge() + " years old\n"
+                + "Heart Rate: " + getHr().getValue() + " bpm\n"
+                + "Blood Pressure: " + getBp().getValue() + "\n"
+                + "Resp Rate: " + getRR().getValue() + " breaths/min\n"
+                + "Temperature: " + String.format("%.2f",getTemp().getValue()) + " °C\n"
+                + "ECG: " + String.format("%.2f",getECG().getValue()) + "\n";
     }
-
-//                + "Blood Pressure: " + bp.toString() + "\n"
-//                + String.format("ECG: %.3f mV%n", ECG)
-//                + "Respiratory Rate: " + RR + " breaths/min\n"
-//                + String.format("Body Temperature:  %.1f °C%n", temp) + "\n";
-
-    /* ----- Example usage -----
-
-    public static void main(String[] args) throws InterruptedException {
-        Patient p = new Patient(1,"John Smith", 35);
-
-        while (true) {
-            p.updateVitals();
-            System.out.println(p.PatientDisplay());
-            Thread.sleep(1000);
-        }
-    }
-
-     */
 }
